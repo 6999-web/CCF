@@ -8,7 +8,11 @@ function normalizeBase(url) {
 function inferDevBase() {
   if (typeof window === 'undefined') return ''
   const host = window.location.host || ''
-  if (host.includes('101.33.210.169:5052') || host.includes('localhost:5052')) {
+  if (
+    host.includes('127.0.0.1:5052') ||
+    host.includes('localhost:5052') ||
+    host.includes('101.33.210.169:5052')
+  ) {
     return 'http://101.33.210.169:5051'
   }
   return ''

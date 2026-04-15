@@ -288,6 +288,17 @@ def resolve_frontend_dir() -> Path | None:
     return None
 
 
+def is_allowed_frontend_source_path(full_path: str) -> bool:
+    normalized = full_path.lstrip("/").replace("\\", "/")
+    if not normalized:
+        return False
+    allowed_exact = {"app.js", "index.html", "favicon.ico"}
+    if normalized in allowed_exact:
+        return True
+    allowed_prefixes = ("src/", "public/")
+    return normalized.startswith(allowed_prefixes)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
@@ -300,7 +311,20 @@ app = FastAPI(title="星萌乐学统一平台", version="2.0.0", lifespan=lifesp
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5052", "http://101.33.210.169:5052", "http://localhost:5051", "http://101.33.210.169:5051", "http://127.0.0.1:5052"],
+    allow_origins=[
+        "http://localhost:5052",
+        "http://127.0.0.1:5052",
+        "http://localhost:5051",
+        "http://127.0.0.1:5051",
+        "http://localhost:5062",
+        "http://127.0.0.1:5062",
+        "http://localhost:5063",
+        "http://127.0.0.1:5063",
+        "http://localhost:5061",
+        "http://127.0.0.1:5061",
+        "http://101.33.210.169:5052",
+        "http://101.33.210.169:5051",
+    ],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -1859,15 +1883,15 @@ def spa_fallback(full_path: str) -> Any:
     if requested.is_file():
         return FileResponse(requested)
 
-    source_requested = (FRONTEND_ROOT / full_path).resolve()
-    try:
-        source_requested.relative_to(FRONTEND_ROOT.resolve())
-    except ValueError:
-        source_requested = None
-    if source_requested is not None and source_requested.is_file():
-        return FileResponse(source_requested)
+    if is_allowed_frontend_source_path(full_path):
+        source_requested = (FRONTEND_ROOT / full_path).resolve()
+        try:
+            source_requested.relative_to(FRONTEND_ROOT.resolve())
+        except ValueError:
+            source_requested = None
+        if source_requested is not None and source_requested.is_file():
+            return FileResponse(source_requested)
 
     if index_file.exists():
         return FileResponse(index_file)
     raise HTTPException(status_code=404, detail="Not Found")
-

@@ -2,7 +2,7 @@
   <div v-if="visible" class="dialog-mask">
     <div class="login-dialog glass-strong">
       <section class="login-dialog-copy">
-        <span class="badge">Secure Entry</span>
+        <span class="badge">{{ badgeText }}</span>
         <h3 style="margin: 12px 0 0; font-size: 28px; font-family: var(--font-display)">{{ card?.title || '统一登录' }}</h3>
         <p class="muted" style="line-height: 1.8">{{ card?.description || '登录后按角色进入对应工作台。' }}</p>
         <div class="portal-card-tags">
@@ -45,7 +45,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 
 import { login } from '../store/auth'
 
@@ -70,27 +70,46 @@ const form = reactive({
 const loading = ref(false)
 const error = ref('')
 const isManagementPortal = computed(() => props.card?.code === 'management')
-const showRoleSelector = computed(() => !isManagementPortal.value && (props.roles?.length || 0) > 1)
-const currentRole = computed(() => {
-  if (isManagementPortal.value) return 'management'
-  return form.subRole || form.role
-})
+const badgeText = computed(() => (isManagementPortal.value ? '管理端安全登录' : '统一登录入口'))
+const showRoleSelector = computed(() => (props.roles?.length || 0) > 1)
+const currentRole = computed(() => form.subRole || form.role)
+
+const previousBodyOverflow = ref('')
 
 watch(
   () => props.card,
   (card) => {
-    form.role = card?.code === 'management' ? 'management' : props.roles?.[0]?.value || card?.entry_roles?.[0] || ''
-    form.subRole = card?.code === 'management' ? '' : props.roles?.[0]?.value || ''
+    form.role = props.roles?.[0]?.value || card?.entry_roles?.[0] || card?.code || ''
+    form.subRole = props.roles?.[0]?.value || ''
     error.value = ''
   },
   { immediate: true },
 )
 
+watch(
+  () => props.visible,
+  (visible) => {
+    if (typeof document === 'undefined') return
+    if (visible) {
+      previousBodyOverflow.value = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return
+    }
+    document.body.style.overflow = previousBodyOverflow.value || ''
+  },
+  { immediate: true },
+)
+
+onBeforeUnmount(() => {
+  if (typeof document === 'undefined') return
+  document.body.style.overflow = previousBodyOverflow.value || ''
+})
+
 function reset() {
   form.username = ''
   form.password = ''
-  form.role = props.card?.code === 'management' ? 'management' : props.roles?.[0]?.value || props.card?.entry_roles?.[0] || ''
-  form.subRole = props.card?.code === 'management' ? '' : props.roles?.[0]?.value || ''
+  form.role = props.roles?.[0]?.value || props.card?.entry_roles?.[0] || props.card?.code || ''
+  form.subRole = props.roles?.[0]?.value || ''
   error.value = ''
 }
 

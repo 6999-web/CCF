@@ -1,58 +1,57 @@
-<template>
-  <div class="page-shell">
+﻿<template>
+  <div class="page-shell v3-landing-shell">
     <div class="page-inner">
-      <header class="landing-head glass-strong">
-        <div class="brand">
-          <div class="brand-mark">悦</div>
+      <header class="v3-topbar glass-strong">
+        <div class="v3-brand">
+          <div class="v3-brand-mark">悦</div>
           <div>
-            <h1 style="margin: 0; font-family: var(--font-display); font-size: 28px">悦读相伴 V3</h1>
-            <p class="muted" style="margin: 4px 0 0">阳光清新 · 3D 立体 · 儿童学习优先</p>
+            <h1 class="v3-brand-title">悦读相伴 V3</h1>
+            <p class="v3-brand-sub">阳光清新 · 3D 立体 · 儿童学习优先</p>
           </div>
         </div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap">
-          <button class="button button-ghost" @click="router.push('/screen')">查看全局大屏</button>
-        </div>
+        <button class="button v3-screen-btn" @click="router.push('/screen')">查看全局大屏</button>
       </header>
 
-      <section class="landing-scene glass">
-        <h2 class="scene-title">让每一次答题都更有鼓励感</h2>
-
-        <button class="scene-card scene-child glass" @click="openByCode('child')">
-          <strong>儿童端</strong>
-          <span>答题训练 · 鼓励反馈</span>
-        </button>
-
-        <button class="scene-card scene-parent glass" @click="openByCode('parent')">
-          <strong>家长端</strong>
-          <span>进度洞察 · AI 周报</span>
-        </button>
-
-        <button class="scene-card scene-counselor glass" @click="openByCode('counselor')">
-          <strong>咨询师端</strong>
-          <span>咨询订单 · 干预计划</span>
-        </button>
-
-        <button class="scene-card scene-management glass" @click="openByCode('management')">
-          <strong>管理端</strong>
-          <span>内容审核 · 数据分析</span>
-        </button>
-
-        <div class="scene-mascot">
-          <TigerCharacter style="transform: scale(1.6); transform-origin: bottom center;" />
+      <section class="v3-stage v3-stage-compact glass">
+        <div class="v3-stage-main">
+          <span class="v3-kicker">儿童友好学习系统</span>
+          <h2 class="v3-hero-title">
+            让每一次答题都更有
+            <span>鼓励感</span>
+          </h2>
+          <p class="v3-hero-desc">
+            统一覆盖儿童端、家长端、咨询师端与管理端。儿童答对赞美，答错先鼓励再提示，家长可实时查看进度与 AI 分析。
+          </p>
         </div>
 
-        <div class="scene-chat">
-          <input
-            v-model="chatInput"
-            class="scene-chat-input"
-            placeholder="想问小悦什么？"
-            @keydown.enter.prevent="askXiaoyue"
-          />
-          <button class="button button-primary scene-chat-btn" :disabled="chatSending" @click="askXiaoyue">
-            {{ chatSending ? '发送中...' : '发送' }}
-          </button>
+        <div class="v3-loop-panel">
+          <article class="v3-loop-item">
+            <h3>学习闭环</h3>
+            <p>选关卡 → 开会话 → 答题反馈 → 提交结果</p>
+          </article>
+          <article class="v3-loop-item">
+            <h3>家长洞察</h3>
+            <p>完成率、正确率、连续学习天数、薄弱项分析</p>
+          </article>
+          <article class="v3-loop-item">
+            <h3>系统协同</h3>
+            <p>儿童端、家长端、咨询师端、管理端统一协作</p>
+          </article>
         </div>
-        <div v-if="chatReply" class="scene-chat-reply">{{ chatReply }}</div>
+      </section>
+
+      <section class="v3-role-grid">
+        <button
+          v-for="card in roleCards"
+          :key="card.code"
+          class="v3-role-card glass"
+          :class="`v3-role-${card.code}`"
+          @click="openByCode(card.code)"
+        >
+          <span class="v3-role-tag">{{ roleTagMap[card.code] || '统一入口' }}</span>
+          <h3>{{ card.title }}</h3>
+          <p>{{ card.description }}</p>
+        </button>
       </section>
     </div>
 
@@ -71,45 +70,37 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import LoginDialog from '../components/LoginDialog.vue'
-import TigerCharacter from '../components/TigerCharacter.vue'
 import { api } from '../services/api'
-import { state as authState } from '../store/auth'
 
 const router = useRouter()
 const cards = ref([])
 const selectedCard = ref(null)
 const loginVisible = ref(false)
-const chatInput = ref('')
-const chatReply = ref('')
-const chatSending = ref(false)
 
 const fallbackCards = [
   {
     code: 'child',
     title: '儿童端',
     subtitle: '安全答题训练',
-    description: '聚焦儿童学习任务，保留清晰的答题闭环与积极反馈。',
+    description: '围绕读写障碍儿童的关卡练习、奖励成长、设备采集与游戏数据回传。',
     features: ['分级关卡', '鼓励反馈', '奖励成长'],
     entry_roles: ['child'],
-    accent: 'blue',
   },
   {
     code: 'parent',
     title: '家长端',
     subtitle: '陪伴与进度洞察',
-    description: '查看学习进度、筛查报告、AI 分析与行动建议。',
+    description: '查看筛查报告、填写问卷、与 AI 智能体问答，并发起人工咨询预约。',
     features: ['进度中台', 'AI 周报', '咨询预约'],
     entry_roles: ['parent'],
-    accent: 'orange',
   },
   {
     code: 'counselor',
     title: '咨询师端',
     subtitle: '专业协作工作台',
-    description: '管理咨询订单、干预计划与知识支持，协同家校落地。',
+    description: '承接咨询订单、编写干预方案、查看儿童画像与知识库素材。',
     features: ['订单管理', '干预计划', '知识支持'],
     entry_roles: ['counselor'],
-    accent: 'green',
   },
   {
     code: 'management',
@@ -117,8 +108,7 @@ const fallbackCards = [
     subtitle: '运营治理中心',
     description: '统一管理用户、内容、审计和系统配置。',
     features: ['用户治理', '内容管理', '审计追踪'],
-    entry_roles: ['management'],
-    accent: 'indigo',
+    entry_roles: ['review_group', 'review_office', 'academic_affairs'],
   },
 ]
 
@@ -127,12 +117,29 @@ const roleLabelMap = {
   parent: '家长端',
   counselor: '咨询师端',
   management: '管理端',
+  review_group: '评教小组',
+  review_office: '评教办',
+  academic_affairs: '教务处',
+}
+
+const roleTagMap = {
+  child: 'CH 趣味训练，轻量上手',
+  parent: 'PA 报告、问答、预约',
+  counselor: 'CO 接单、排班、干预',
+  management: 'MG 审核、配置、治理',
 }
 
 const currentRoles = computed(() => {
   if (!selectedCard.value) return []
-  const source = selectedCard.value.code === 'management' ? ['management'] : (selectedCard.value.entry_roles || [])
-  return source.map((value) => ({ value, label: roleLabelMap[value] || value }))
+  if (selectedCard.value.code === 'management') {
+    return [{ value: 'management', label: roleLabelMap.management }]
+  }
+  return (selectedCard.value.entry_roles || []).map((value) => ({ value, label: roleLabelMap[value] || value }))
+})
+
+const roleCards = computed(() => {
+  const byCode = new Map(cards.value.map((item) => [item.code, item]))
+  return ['child', 'parent', 'counselor', 'management'].map((code) => byCode.get(code)).filter(Boolean)
 })
 
 onMounted(async () => {
@@ -154,65 +161,5 @@ function openByCode(code) {
 function handleLoginSuccess(data) {
   loginVisible.value = false
   router.push(`/portal/${data.portal || data.user.role}`)
-}
-
-function localReply(question) {
-  if (question.includes('不会') || question.includes('答错')) {
-    return '没关系，我们先把题目里的关键词圈出来，再一步一步做。你已经很棒了。'
-  }
-  if (question.includes('怎么学') || question.includes('计划')) {
-    return '建议今天先做 10 分钟认字，再做 10 分钟阅读理解，最后复盘 5 分钟。'
-  }
-  if (question.includes('你好')) {
-    return '你好呀，我是小悦，我们一起轻松学习。'
-  }
-  return '这个问题很棒。我们先从题干关键信息开始，我会陪你一步步完成。'
-}
-
-async function askXiaoyue() {
-  const question = String(chatInput.value || '').trim()
-  if (!question || chatSending.value) return
-  chatSending.value = true
-  try {
-    let answer = ''
-    try {
-      const data = await api.post('/api/v1/public/ai/chat', {
-        question,
-        role: authState.user ? 'parent' : 'child',
-        style_profile: 'child_cute',
-      })
-      answer = data?.answer || ''
-    } catch {
-      try {
-        const data = await api.post('/api/public/ai/chat', {
-          question,
-          role: authState.user ? 'parent' : 'child',
-          style_profile: 'child_cute',
-        })
-        answer = data?.answer || ''
-      } catch {
-        answer = ''
-      }
-      if (!answer && authState.token && authState.user) {
-        try {
-          const data = await api.post('/api/v1/ai/chat', {
-            question,
-            role: 'parent',
-            style_profile: 'child_cute',
-          })
-          answer = data?.answer || ''
-        } catch {
-          answer = ''
-        }
-      }
-    }
-    if (!answer) {
-      answer = localReply(question)
-    }
-    chatReply.value = answer
-    window.xiaoyueCompanion?.speak?.(answer, 'gentle')
-  } finally {
-    chatSending.value = false
-  }
 }
 </script>
